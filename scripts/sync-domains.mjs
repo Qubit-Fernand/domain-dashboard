@@ -5,42 +5,44 @@ import * as Alidns from "@alicloud/alidns20150109";
 import * as Domain from "@alicloud/domain20180129";
 import OpenApi from "@alicloud/openapi-client";
 import Util from "@alicloud/tea-util";
+import { BasicCredentials } from "@huaweicloud/huaweicloud-sdk-core";
+import { AKSKSigner } from "@huaweicloud/huaweicloud-sdk-core/auth/AKSKSigner.js";
 
 const outputPath = resolve("public/domains.json");
 const snapshotPath = resolve("data/domains-snapshot.json");
 const pageSize = 100;
 
-const accessKeyId = process.env.ALIYUN_ACCESS_KEY_ID;
-const accessKeySecret = process.env.ALIYUN_ACCESS_KEY_SECRET;
+const aliyunAccessKeyId = process.env.ALIYUN_ACCESS_KEY_ID;
+const aliyunAccessKeySecret = process.env.ALIYUN_ACCESS_KEY_SECRET;
+const huaweiAccessKeyId = process.env.HUAWEICLOUD_ACCESS_KEY_ID;
+const huaweiSecretAccessKey = process.env.HUAWEICLOUD_SECRET_ACCESS_KEY;
 
-if (!accessKeyId || !accessKeySecret) {
-  console.error("Missing ALIYUN_ACCESS_KEY_ID or ALIYUN_ACCESS_KEY_SECRET in .env.");
+const aliyunConfigured = Boolean(aliyunAccessKeyId && aliyunAccessKeySecret);
+const huaweiConfigured = Boolean(huaweiAccessKeyId && huaweiSecretAccessKey);
+
+if (!aliyunConfigured && !huaweiConfigured) {
+  console.error("Missing provider credentials in .env. Configure Aliyun and/or Huawei Cloud.");
   process.exit(1);
 }
 
-const config = new OpenApi.Config({
-  accessKeyId,
-  accessKeySecret,
-  regionId: process.env.ALIYUN_REGION_ID || "cn-hangzhou",
-});
+const aliyun = aliyunConfigured ? createAliyunClients() : null;
+const huaweiCredential = huaweiConfigured
+  ? new BasicCredentials().withAk(huaweiAccessKeyId).withSk(huaweiSecretAccessKey)
+  : null;
 
-const DomainClient = Domain.default.default;
-const DnsClient = Alidns.default.default;
-const domainClient = new DomainClient(config);
-const dnsClient = new DnsClient(config);
-const runtime = new Util.RuntimeOptions({
-  connectTimeout: 10000,
-  readTimeout: 20000,
-  autoretry: true,
-  maxAttempts: 2,
-});
-
-const [registeredDomains, dnsDomains] = await Promise.all([
-  fetchRegisteredDomains(),
-  fetchDnsDomains(),
+const [aliyunRegisteredDomains, aliyunDnsDomains, huaweiRegisteredDomains, huaweiDnsDomains] = await Promise.all([
+  aliyun ? safeFetch("Aliyun registered domains", () => fetchAliyunRegisteredDomains(aliyun.domainClient, aliyun.runtime)) : [],
+  aliyun ? safeFetch("Aliyun DNS domains", () => fetchAliyunDnsDomains(aliyun.dnsClient, aliyun.runtime)) : [],
+  huaweiCredential ? safeFetch("Huawei Cloud registered domains", () => fetchHuaweiRegisteredDomains(huaweiCredential)) : [],
+  huaweiCredential ? safeFetch("Huawei Cloud DNS zones", () => fetchHuaweiDnsDomains(huaweiCredential)) : [],
 ]);
 
-const merged = mergeDomains(registeredDomains, dnsDomains);
+const merged = mergeDomains({
+  aliyunRegisteredDomains,
+  aliyunDnsDomains,
+  huaweiRegisteredDomains,
+  huaweiDnsDomains,
+});
 
 await mkdir(dirname(outputPath), { recursive: true });
 await mkdir(dirname(snapshotPath), { recursive: true });
@@ -49,12 +51,43 @@ const payload = `${JSON.stringify(merged, null, 2)}\n`;
 await writeFile(outputPath, payload);
 await writeFile(snapshotPath, payload);
 
-console.log(`Fetched ${registeredDomains.length} Aliyun registered domains.`);
-console.log(`Fetched ${dnsDomains.length} Aliyun DNS domains.`);
+console.log(`Fetched ${aliyunRegisteredDomains.length} Aliyun registered domains.`);
+console.log(`Fetched ${aliyunDnsDomains.length} Aliyun DNS domains.`);
+console.log(`Fetched ${huaweiRegisteredDomains.length} Huawei Cloud registered domains.`);
+console.log(`Fetched ${huaweiDnsDomains.length} Huawei Cloud DNS zones.`);
 console.log(`Wrote ${outputPath}`);
 console.log(`Wrote ${snapshotPath}`);
 
-async function fetchRegisteredDomains() {
+function createAliyunClients() {
+  const config = new OpenApi.Config({
+    accessKeyId: aliyunAccessKeyId,
+    accessKeySecret: aliyunAccessKeySecret,
+    regionId: process.env.ALIYUN_REGION_ID || "cn-hangzhou",
+  });
+  const DomainClient = Domain.default.default;
+  const DnsClient = Alidns.default.default;
+  return {
+    domainClient: new DomainClient(config),
+    dnsClient: new DnsClient(config),
+    runtime: new Util.RuntimeOptions({
+      connectTimeout: 10000,
+      readTimeout: 20000,
+      autoretry: true,
+      maxAttempts: 2,
+    }),
+  };
+}
+
+async function safeFetch(label, fetcher) {
+  try {
+    return await fetcher();
+  } catch (error) {
+    console.warn(`Warning: failed to fetch ${label}: ${formatError(error)}`);
+    return [];
+  }
+}
+
+async function fetchAliyunRegisteredDomains(domainClient, runtime) {
   const domains = [];
   let pageNum = 1;
 
@@ -81,7 +114,7 @@ async function fetchRegisteredDomains() {
   return domains;
 }
 
-async function fetchDnsDomains() {
+async function fetchAliyunDnsDomains(dnsClient, runtime) {
   const domains = [];
   let pageNumber = 1;
 
@@ -108,10 +141,91 @@ async function fetchDnsDomains() {
   return domains;
 }
 
-function mergeDomains(registeredDomains, dnsDomains) {
+async function fetchHuaweiRegisteredDomains(credential) {
+  const domains = [];
+  const limit = 200;
+  let offset = 0;
+
+  while (true) {
+    const body = await huaweiGetJson({
+      credential,
+      endpoint: process.env.HUAWEICLOUD_DOMAIN_ENDPOINT || "https://domain.myhuaweicloud.com",
+      path: "/v2/domains",
+      queryParams: { limit, offset },
+    });
+    const page = body.domains || [];
+    domains.push(...page);
+
+    const total = body.total || domains.length;
+    if (domains.length >= total || page.length === 0) break;
+    offset += limit;
+  }
+
+  return domains;
+}
+
+async function fetchHuaweiDnsDomains(credential) {
+  const zones = [];
+  const endpoint = `https://dns.${process.env.HUAWEICLOUD_DNS_REGION || "ap-southeast-3"}.myhuaweicloud.com`;
+  let marker = undefined;
+
+  while (true) {
+    const queryParams = marker ? { limit: pageSize, marker } : { limit: pageSize };
+    const body = await huaweiGetJson({ credential, endpoint, path: "/v2/zones", queryParams });
+    const page = body.zones || [];
+    zones.push(...page);
+
+    const total = body.metadata?.total_count || zones.length;
+    marker = readNextMarker(body.links?.next);
+    if (zones.length >= total || page.length === 0 || !marker) break;
+  }
+
+  return zones;
+}
+
+async function huaweiGetJson({ credential, endpoint, path, queryParams }) {
+  const query = new URLSearchParams(queryParams).toString();
+  const fullUrl = `${endpoint}${path}${query ? `?${query}` : ""}`;
+  const request = {
+    endpoint: `${endpoint}${path}`,
+    url: path,
+    method: "GET",
+    queryParams,
+    headers: { "content-type": "application/json" },
+  };
+  const headers = AKSKSigner.sign(request, credential);
+  let response;
+  let text = "";
+
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      response = await fetch(fullUrl, {
+        headers,
+        signal: AbortSignal.timeout(45000),
+      });
+      text = await response.text();
+      break;
+    } catch (error) {
+      if (attempt === 3) throw error;
+      await delay(750 * attempt);
+    }
+  }
+
+  if (!response?.ok) {
+    throw new Error(`Huawei Cloud API ${response.status}: ${text.slice(0, 500)}`);
+  }
+
+  return text ? JSON.parse(text) : {};
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function mergeDomains({ aliyunRegisteredDomains, aliyunDnsDomains, huaweiRegisteredDomains, huaweiDnsDomains }) {
   const byName = new Map();
 
-  for (const domain of registeredDomains) {
+  for (const domain of aliyunRegisteredDomains) {
     const name = normalizeDomainName(domain.domainName);
     if (!name) continue;
 
@@ -140,7 +254,7 @@ function mergeDomains(registeredDomains, dnsDomains) {
     });
   }
 
-  for (const domain of dnsDomains) {
+  for (const domain of aliyunDnsDomains) {
     const name = normalizeDomainName(domain.domainName);
     if (!name) continue;
 
@@ -183,11 +297,76 @@ function mergeDomains(registeredDomains, dnsDomains) {
     });
   }
 
+  for (const domain of huaweiRegisteredDomains) {
+    const name = normalizeDomainName(domain.domain_name);
+    if (!name) continue;
+
+    const existing = byName.get(name);
+    const domainPayload = {
+      name,
+      registrar: "Huawei Cloud",
+      dnsProvider: existing?.dnsProvider || "Unknown",
+      expiresAt: normalizeDate(domain.expire_date),
+      autoRenew: domain.auto_renew === "1" || domain.auto_renew_inner === "1",
+      purpose: "Registered domain",
+      owner: "Me",
+      tags: compactTags(["huawei-cloud", "registered", domain.status, domain.audit_status, domain.reg_type]),
+      notes: compactText([
+        domain.register_date ? `Registered: ${normalizeDate(domain.register_date)}` : "",
+        domain.order_id ? `Order: ${domain.order_id}` : "",
+        domain.privacy_protection != null ? `Privacy protection: ${domain.privacy_protection}` : "",
+      ]),
+      source: ["huawei-domain"],
+    };
+
+    byName.set(name, existing ? mergeDomainRecord(existing, domainPayload) : domainPayload);
+  }
+
+  for (const zone of huaweiDnsDomains) {
+    const name = normalizeDomainName(zone.name);
+    if (!name) continue;
+
+    const existing = byName.get(name);
+    const zonePayload = {
+      name,
+      registrar: existing?.registrar || "Unknown",
+      dnsProvider: "Huawei Cloud DNS",
+      expiresAt: existing?.expiresAt || null,
+      autoRenew: Boolean(existing?.autoRenew),
+      purpose: zone.description || "DNS zone",
+      owner: "Me",
+      tags: compactTags(["huawei-cloud", "dns", zone.status, zone.zone_type, ...readHuaweiTags(zone.tags)]),
+      notes: compactText([
+        zone.record_num != null ? `DNS records: ${zone.record_num}` : "",
+        zone.ttl != null ? `TTL: ${zone.ttl}` : "",
+        zone.created_at ? `DNS created: ${normalizeDate(zone.created_at)}` : "",
+      ]),
+      source: ["huawei-dns"],
+    };
+
+    byName.set(name, existing ? mergeDomainRecord(existing, zonePayload) : zonePayload);
+  }
+
   return Array.from(byName.values()).sort((a, b) => {
     const aTime = a.expiresAt ? new Date(`${a.expiresAt}T00:00:00`).getTime() : Number.MAX_SAFE_INTEGER;
     const bTime = b.expiresAt ? new Date(`${b.expiresAt}T00:00:00`).getTime() : Number.MAX_SAFE_INTEGER;
     return aTime - bTime || a.name.localeCompare(b.name);
   });
+}
+
+function mergeDomainRecord(existing, incoming) {
+  return {
+    ...existing,
+    registrar: existing.registrar === "Unknown" ? incoming.registrar : existing.registrar,
+    dnsProvider: incoming.dnsProvider === "Unknown" ? existing.dnsProvider : incoming.dnsProvider,
+    expiresAt: existing.expiresAt || incoming.expiresAt,
+    autoRenew: Boolean(existing.autoRenew || incoming.autoRenew),
+    purpose: existing.purpose === "DNS zone" ? incoming.purpose : existing.purpose,
+    owner: existing.owner || incoming.owner,
+    tags: compactTags([...(existing.tags || []), ...(incoming.tags || [])]),
+    notes: compactText([existing.notes, incoming.notes]),
+    source: compactTags([...(existing.source || []), ...(incoming.source || [])]),
+  };
 }
 
 function normalizeDomainName(value) {
@@ -218,6 +397,19 @@ function readTags(tags = []) {
   return tags.flatMap((tag) => [tag.key, tag.value]).filter(Boolean);
 }
 
+function readHuaweiTags(tags = []) {
+  return tags.flatMap((tag) => [tag.key, tag.value]).filter(Boolean);
+}
+
+function readNextMarker(nextUrl) {
+  if (!nextUrl) return undefined;
+  try {
+    return new URL(nextUrl).searchParams.get("marker") || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function compactTags(tags) {
   return Array.from(
     new Set(
@@ -235,4 +427,9 @@ function compactText(parts) {
     .filter(Boolean)
     .join(" | ");
   return text || undefined;
+}
+
+function formatError(error) {
+  if (error instanceof Error) return error.message;
+  return String(error);
 }

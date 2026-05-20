@@ -14,9 +14,9 @@ npm run dev
 
 Open the local URL printed by Vite.
 
-## Sync Aliyun
+## Sync Providers
 
-Create `.env` from `.env.example`, fill the Aliyun RAM access key, then run:
+Create `.env` from `.env.example`, fill one or more provider access keys, then run:
 
 ```bash
 npm run sync
@@ -26,8 +26,10 @@ The sync currently reads:
 
 - Aliyun Domain `QueryDomainList` for registered domains and expiration dates.
 - Aliyun DNS `DescribeDomains` for DNS-hosted zones and record counts.
+- Huawei Cloud Domains `GET /v2/domains` for registered domains and expiration dates.
+- Huawei Cloud DNS `GET /v2/zones` for public DNS zones and record counts.
 
-Use a RAM user with read-only permissions for Domain and Alidns. Do not put access keys in frontend files.
+Use read-only IAM/RAM users. Do not put access keys in frontend files.
 
 `public/domains.json` is generated and ignored by Git so real domain inventory does not get committed by accident.
 
