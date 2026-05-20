@@ -1,0 +1,35 @@
+[
+  {
+    "name": "example.com",
+    "registrar": "Aliyun",
+    "dnsProvider": "Cloudflare",
+    "expiresAt": "2026-08-12",
+    "autoRenew": true,
+    "purpose": "Personal site",
+    "owner": "Me",
+    "tags": ["production", "public"],
+    "notes": "Replace this sample row with a real domain."
+  },
+  {
+    "name": "example.cn",
+    "registrar": "Huawei Cloud",
+    "dnsProvider": "Huawei Cloud DNS",
+    "expiresAt": "2026-06-01",
+    "autoRenew": false,
+    "purpose": "Project reserve",
+    "owner": "Me",
+    "tags": ["review"],
+    "notes": "Sample expiring-soon domain."
+  },
+  {
+    "name": "example.net",
+    "registrar": "Aliyun",
+    "dnsProvider": "Unknown",
+    "expiresAt": "2027-01-03",
+    "autoRenew": false,
+    "purpose": "Unused",
+    "owner": "Me",
+    "tags": ["parking"],
+    "notes": "Use this row shape for manual inventory."
+  }
+]
