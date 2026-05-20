@@ -17,26 +17,30 @@ type Domain = {
   name: string;
   registrar: string;
   dnsProvider: string;
-  expiresAt: string;
+  expiresAt?: string | null;
   autoRenew: boolean;
   purpose: string;
   owner: string;
   tags: string[];
   notes?: string;
+  source?: string[];
 };
 
-type Status = "expired" | "urgent" | "soon" | "healthy";
+type Status = "expired" | "urgent" | "soon" | "healthy" | "unknown";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
-function daysUntil(date: string) {
+function daysUntil(date?: string | null) {
+  if (!date) return null;
   const expires = new Date(`${date}T00:00:00`);
+  if (Number.isNaN(expires.getTime())) return null;
   const today = new Date();
   const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   return Math.ceil((expires.getTime() - start.getTime()) / MS_PER_DAY);
 }
 
-function getStatus(days: number): Status {
+function getStatus(days: number | null): Status {
+  if (days == null) return "unknown";
   if (days < 0) return "expired";
   if (days <= 14) return "urgent";
   if (days <= 60) return "soon";
@@ -49,6 +53,7 @@ function statusLabel(status: Status) {
     urgent: "Urgent",
     soon: "Soon",
     healthy: "Healthy",
+    unknown: "Unknown",
   }[status];
 }
 
@@ -84,7 +89,7 @@ function App() {
           const days = daysUntil(domain.expiresAt);
           return { ...domain, days, status: getStatus(days) };
         })
-        .sort((a, b) => a.days - b.days || a.name.localeCompare(b.name)),
+        .sort((a, b) => (a.days ?? Number.MAX_SAFE_INTEGER) - (b.days ?? Number.MAX_SAFE_INTEGER) || a.name.localeCompare(b.name)),
     [domains],
   );
 
@@ -97,7 +102,7 @@ function App() {
     const queryText = query.trim().toLowerCase();
     const matchesQuery =
       queryText.length === 0 ||
-      [domain.name, domain.registrar, domain.dnsProvider, domain.purpose, domain.owner, ...domain.tags]
+      [domain.name, domain.registrar, domain.dnsProvider, domain.purpose, domain.owner, ...domain.tags, ...(domain.source || [])]
         .join(" ")
         .toLowerCase()
         .includes(queryText);
@@ -108,7 +113,7 @@ function App() {
 
   const stats = {
     total: domains.length,
-    urgent: enriched.filter((domain) => domain.status === "expired" || domain.status === "urgent").length,
+    urgent: enriched.filter((domain) => domain.status === "expired" || domain.status === "urgent" || domain.status === "unknown").length,
     soon: enriched.filter((domain) => domain.status === "soon").length,
     autoRenew: enriched.filter((domain) => domain.autoRenew).length,
   };
@@ -182,8 +187,14 @@ function App() {
             <span>{domain.registrar}</span>
             <span>{domain.dnsProvider}</span>
             <span>
-              {domain.expiresAt}
-              <small>{domain.days >= 0 ? `${domain.days} days left` : `${Math.abs(domain.days)} days ago`}</small>
+              {domain.expiresAt || "No expiry data"}
+              <small>
+                {domain.days == null
+                  ? "Check registrar"
+                  : domain.days >= 0
+                    ? `${domain.days} days left`
+                    : `${Math.abs(domain.days)} days ago`}
+              </small>
             </span>
             <span>{domain.purpose}</span>
             <StatusPill status={domain.status} autoRenew={domain.autoRenew} />

@@ -10,7 +10,12 @@
     "sync": "node scripts/sync-domains.mjs"
   },
   "dependencies": {
+    "@alicloud/alidns20150109": "^4.4.1",
+    "@alicloud/domain20180129": "^5.0.3",
+    "@alicloud/openapi-client": "^0.4.15",
+    "@alicloud/tea-util": "^1.4.11",
     "@vitejs/plugin-react": "^5.1.1",
+    "dotenv": "^17.4.2",
     "lucide-react": "^0.561.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",

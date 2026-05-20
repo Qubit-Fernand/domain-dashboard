@@ -6,4 +6,5 @@ dist/
 .env.*
 !.env.example
 public/domains.local.json
+public/domains.json
 data/

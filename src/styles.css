@@ -270,7 +270,8 @@ select {
 }
 
 .pill.urgent,
-.pill.expired {
+.pill.expired,
+.pill.unknown {
   color: #833414;
   background: #f9e0d2;
 }

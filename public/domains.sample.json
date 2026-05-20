@@ -8,7 +8,8 @@
     "purpose": "Personal site",
     "owner": "Me",
     "tags": ["production", "public"],
-    "notes": "Replace this sample row with a real domain."
+    "notes": "Replace this sample row with a real domain.",
+    "source": ["sample"]
   },
   {
     "name": "example.cn",
@@ -19,7 +20,8 @@
     "purpose": "Project reserve",
     "owner": "Me",
     "tags": ["review"],
-    "notes": "Sample expiring-soon domain."
+    "notes": "Sample expiring-soon domain.",
+    "source": ["sample"]
   },
   {
     "name": "example.net",
@@ -30,6 +32,7 @@
     "purpose": "Unused",
     "owner": "Me",
     "tags": ["parking"],
-    "notes": "Use this row shape for manual inventory."
+    "notes": "Use this row shape for manual inventory.",
+    "source": ["sample"]
   }
 ]
