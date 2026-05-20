@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
+import { resolveNs } from "node:dns/promises";
 import "dotenv/config";
 import * as Alidns from "@alicloud/alidns20150109";
 import * as Domain from "@alicloud/domain20180129";
@@ -37,12 +38,14 @@ const [aliyunRegisteredDomains, aliyunDnsDomains, huaweiRegisteredDomains, huawe
   huaweiCredential ? safeFetch("Huawei Cloud DNS zones", () => fetchHuaweiDnsDomains(huaweiCredential)) : [],
 ]);
 
-const merged = mergeDomains({
-  aliyunRegisteredDomains,
-  aliyunDnsDomains,
-  huaweiRegisteredDomains,
-  huaweiDnsDomains,
-});
+const merged = await annotatePublicDnsProviders(
+  mergeDomains({
+    aliyunRegisteredDomains,
+    aliyunDnsDomains,
+    huaweiRegisteredDomains,
+    huaweiDnsDomains,
+  }),
+);
 
 await mkdir(dirname(outputPath), { recursive: true });
 await mkdir(dirname(snapshotPath), { recursive: true });
@@ -304,7 +307,7 @@ function mergeDomains({ aliyunRegisteredDomains, aliyunDnsDomains, huaweiRegiste
     const existing = byName.get(name);
     const domainPayload = {
       name,
-      registrar: "Huawei Cloud",
+      registrar: "华为云",
       dnsProvider: existing?.dnsProvider || "Unknown",
       expiresAt: normalizeDate(domain.expire_date),
       autoRenew: domain.auto_renew === "1" || domain.auto_renew_inner === "1",
@@ -367,6 +370,33 @@ function mergeDomainRecord(existing, incoming) {
     notes: compactText([existing.notes, incoming.notes]),
     source: compactTags([...(existing.source || []), ...(incoming.source || [])]),
   };
+}
+
+async function annotatePublicDnsProviders(domains) {
+  const annotated = await Promise.all(
+    domains.map(async (domain) => {
+      const nameservers = await safeFetch(`public NS for ${domain.name}`, () => resolveNs(domain.name));
+      if (!nameservers.length) return domain;
+
+      const provider = inferDnsProviderFromNameservers(nameservers);
+      return {
+        ...domain,
+        dnsProvider: `${provider} (${nameservers.join(", ")})`,
+        notes: compactText([domain.notes, `Public NS: ${nameservers.join(", ")}`]),
+      };
+    }),
+  );
+
+  return annotated;
+}
+
+function inferDnsProviderFromNameservers(nameservers) {
+  const joined = nameservers.join(" ").toLowerCase();
+  if (joined.includes("vercel-dns.com")) return "Vercel DNS";
+  if (joined.includes("cloudflare.com")) return "Cloudflare";
+  if (joined.includes("alidns.com") || joined.includes("hichina.com")) return "Aliyun DNS";
+  if (joined.includes("huaweicloud-dns")) return "Huawei Cloud DNS";
+  return "External DNS";
 }
 
 function normalizeDomainName(value) {

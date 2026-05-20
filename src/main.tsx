@@ -13,6 +13,17 @@ import {
 } from "lucide-react";
 import "./styles.css";
 
+const REGISTRAR_LINKS: Record<string, string> = {
+  Aliyun:
+    "https://dc.console.aliyun.com/next/index?spm=5176.27804673.resourceCenter.1.5d241f58mEhjlS#/domain-list/all?type=",
+  阿里云:
+    "https://dc.console.aliyun.com/next/index?spm=5176.27804673.resourceCenter.1.5d241f58mEhjlS#/domain-list/all?type=",
+  "Huawei Cloud":
+    "https://console.huaweicloud.com/domain/?agencyId=0d7e9b82eb80f5801fbbc0028347bf7a&region=cn-north-4&locale=zh-cn#/domain/list",
+  华为云:
+    "https://console.huaweicloud.com/domain/?agencyId=0d7e9b82eb80f5801fbbc0028347bf7a&region=cn-north-4&locale=zh-cn#/domain/list",
+};
+
 type Domain = {
   name: string;
   registrar: string;
@@ -184,7 +195,7 @@ function App() {
                 ))}
               </div>
             </div>
-            <span>{domain.registrar}</span>
+            <RegistrarLink registrar={domain.registrar} />
             <span>{domain.dnsProvider}</span>
             <span>
               {domain.expiresAt || "No expiry data"}
@@ -242,6 +253,18 @@ function StatusPill({ status, autoRenew }: { status: Status; autoRenew: boolean 
       {statusLabel(status)}
       {autoRenew ? <small>Auto</small> : null}
     </span>
+  );
+}
+
+function RegistrarLink({ registrar }: { registrar: string }) {
+  const href = REGISTRAR_LINKS[registrar];
+
+  if (!href) return <span>{registrar}</span>;
+
+  return (
+    <a className="registrarLink" href={href} target="_blank" rel="noreferrer">
+      {registrar}
+    </a>
   );
 }
 

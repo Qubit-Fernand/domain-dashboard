@@ -226,6 +226,17 @@ select {
   color: #68726b;
 }
 
+.registrarLink {
+  color: #245f73;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.registrarLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .tags {
   display: flex;
   flex-wrap: wrap;

@@ -13,7 +13,7 @@
   },
   {
     "name": "example.cn",
-    "registrar": "Huawei Cloud",
+    "registrar": "华为云",
     "dnsProvider": "Huawei Cloud DNS",
     "expiresAt": "2026-06-01",
     "autoRenew": false,
