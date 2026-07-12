@@ -39,7 +39,7 @@ The sync currently reads:
 
 Use read-only IAM/RAM users. Do not put access keys in frontend files.
 
-`public/domains.json` is generated and ignored by Git so real domain inventory does not get committed by accident.
+`public/domains.json` is generated data. Keep only a sanitized dashboard snapshot in Git; avoid committing access keys, private registrar credentials, or raw provider responses.
 
 ## Data Shape
 
