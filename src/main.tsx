@@ -7,9 +7,11 @@ import {
   CheckCircle2,
   CircleSlash,
   Cloud,
+  ExternalLink,
   RefreshCcw,
   Search,
   ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 import "./styles.css";
 
@@ -128,17 +130,45 @@ function App() {
     soon: enriched.filter((domain) => domain.status === "soon").length,
     autoRenew: enriched.filter((domain) => domain.autoRenew).length,
   };
+  const calmDomains = Math.max(stats.total - stats.urgent - stats.soon, 0);
 
   return (
     <main className="shell">
-      <header className="topbar">
-        <div>
-          <p className="eyebrow">Local inventory</p>
-          <h1>Domain Dashboard</h1>
-        </div>
-        <button className="iconButton" onClick={() => void loadDomains()} title="Refresh domains">
-          <RefreshCcw size={18} />
-        </button>
+      <div className="ambient ambientA" />
+      <div className="ambient ambientB" />
+
+      <header className="hero">
+        <nav className="topbar" aria-label="Dashboard navigation">
+          <div className="appBadge">
+            <span className="appIcon">
+              <Cloud size={17} />
+            </span>
+            <span>Domains</span>
+          </div>
+          <div className="topbarMeta">
+            <span>{lastLoadedAt ? `Updated ${lastLoadedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "Syncing"}</span>
+            <button className="iconButton" onClick={() => void loadDomains()} title="Refresh domains">
+              <RefreshCcw size={18} />
+            </button>
+          </div>
+        </nav>
+
+        <section className="heroPanel" aria-label="Dashboard overview">
+          <div className="heroCopy">
+            <p className="eyebrow">
+              <Sparkles size={14} /> Local inventory
+            </p>
+            <h1>Domain Dashboard</h1>
+            <p className="subtitle">
+              A calm, glanceable control surface for renewals, registrars, and DNS ownership.
+            </p>
+          </div>
+          <div className="focusCard" aria-label="Renewal focus">
+            <span className="focusLabel">Needs attention</span>
+            <strong>{stats.urgent}</strong>
+            <span>{stats.soon} due soon · {calmDomains} calm</span>
+          </div>
+        </section>
       </header>
 
       <section className="metrics" aria-label="Domain summary">
@@ -264,6 +294,7 @@ function RegistrarLink({ registrar }: { registrar: string }) {
   return (
     <a className="registrarLink" href={href} target="_blank" rel="noreferrer">
       {registrar}
+      <ExternalLink size={13} />
     </a>
   );
 }

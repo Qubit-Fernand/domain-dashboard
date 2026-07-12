@@ -2,6 +2,14 @@
 
 A local-first dashboard for keeping scattered domain names visible in one place.
 
+## Branch Policy
+
+The `apple-design-preview` branch is the primary working version of this site.
+It contains the Apple-inspired interface and should be used as the reference
+for local preview, future design work, and eventual deployment. The `main`
+branch is kept as the original/base branch with the same data file for
+compatibility and fallback.
+
 The dashboard reads generated `public/domains.json` in the browser. `scripts/sync-domains.mjs` can pull from provider APIs and write the same normalized JSON shape without exposing cloud credentials to the frontend. A safe sample lives at `public/domains.sample.json`.
 
 ## Run

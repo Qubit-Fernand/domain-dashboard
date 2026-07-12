@@ -1,38 +1,124 @@
 [
   {
-    "name": "example.com",
-    "registrar": "Aliyun",
-    "dnsProvider": "Cloudflare",
-    "expiresAt": "2026-08-12",
+    "name": "pku-quantum.tech",
+    "registrar": "阿里云",
+    "dnsProvider": "Vercel DNS (ns2.vercel-dns.com, ns1.vercel-dns.com)",
+    "expiresAt": "2028-08-27",
     "autoRenew": true,
-    "purpose": "Personal site",
-    "owner": "Me",
-    "tags": ["production", "public"],
-    "notes": "Replace this sample row with a real domain.",
-    "source": ["sample"]
+    "purpose": "Registered domain",
+    "owner": "周烁",
+    "tags": [
+      "aliyun",
+      "registered",
+      "3",
+      "1",
+      "acs:rm:rgId",
+      "rg-acfmzygk76ozj3i"
+    ],
+    "notes": "Instance: S20256N0UZ870189 | Audit: SUCCEED | Public NS: ns2.vercel-dns.com, ns1.vercel-dns.com",
+    "source": [
+      "aliyun-domain"
+    ]
   },
   {
-    "name": "example.cn",
+    "name": "pkujingchu.cn",
+    "registrar": "阿里云",
+    "dnsProvider": "Vercel DNS (ns2.vercel-dns.com, ns1.vercel-dns.com)",
+    "expiresAt": "2029-05-19",
+    "autoRenew": true,
+    "purpose": "Registered domain",
+    "owner": "周烁",
+    "tags": [
+      "aliyun",
+      "registered",
+      "3",
+      "1",
+      "acs:rm:rgId",
+      "rg-acfmzygk76ozj3i"
+    ],
+    "notes": "Instance: S20263V1I0K60548 | Audit: SUCCEED | Public NS: ns2.vercel-dns.com, ns1.vercel-dns.com",
+    "source": [
+      "aliyun-domain"
+    ]
+  },
+  {
+    "name": "fernand.tech",
     "registrar": "华为云",
-    "dnsProvider": "Huawei Cloud DNS",
-    "expiresAt": "2026-06-01",
-    "autoRenew": false,
-    "purpose": "Project reserve",
+    "dnsProvider": "Vercel DNS (ns2.vercel-dns.com, ns1.vercel-dns.com)",
+    "expiresAt": "2030-08-12",
+    "autoRenew": true,
+    "purpose": "Registered domain",
     "owner": "Me",
-    "tags": ["review"],
-    "notes": "Sample expiring-soon domain.",
-    "source": ["sample"]
+    "tags": [
+      "huawei-cloud",
+      "registered",
+      "SUCCEED",
+      "PERSON",
+      "dns",
+      "ACTIVE",
+      "public"
+    ],
+    "notes": "Registered: 2022-08-12 | Order: CS2208122319E2KKL | DNS records: 2 | TTL: 300 | DNS created: 2022-08-12 | Public NS: ns2.vercel-dns.com, ns1.vercel-dns.com",
+    "source": [
+      "huawei-domain",
+      "huawei-dns"
+    ]
   },
   {
-    "name": "example.net",
-    "registrar": "Aliyun",
-    "dnsProvider": "Unknown",
-    "expiresAt": "2027-01-03",
+    "name": "quantumcomputation.tech",
+    "registrar": "Unknown",
+    "dnsProvider": "Huawei Cloud DNS",
+    "expiresAt": null,
     "autoRenew": false,
-    "purpose": "Unused",
+    "purpose": "DNS zone",
     "owner": "Me",
-    "tags": ["parking"],
-    "notes": "Use this row shape for manual inventory.",
-    "source": ["sample"]
+    "tags": [
+      "huawei-cloud",
+      "dns",
+      "ACTIVE",
+      "public"
+    ],
+    "notes": "DNS records: 2 | TTL: 300 | DNS created: 2022-08-31",
+    "source": [
+      "huawei-dns"
+    ]
+  },
+  {
+    "name": "shuozhou.tech",
+    "registrar": "Unknown",
+    "dnsProvider": "Huawei Cloud DNS",
+    "expiresAt": null,
+    "autoRenew": false,
+    "purpose": "DNS zone",
+    "owner": "Me",
+    "tags": [
+      "huawei-cloud",
+      "dns",
+      "ACTIVE",
+      "public"
+    ],
+    "notes": "DNS records: 2 | TTL: 300 | DNS created: 2023-02-26",
+    "source": [
+      "huawei-dns"
+    ]
+  },
+  {
+    "name": "zhoushuo.tech",
+    "registrar": "Unknown",
+    "dnsProvider": "External DNS (pelican.dnspod.net, arno.dnspod.net)",
+    "expiresAt": null,
+    "autoRenew": false,
+    "purpose": "DNS zone",
+    "owner": "Me",
+    "tags": [
+      "huawei-cloud",
+      "dns",
+      "ACTIVE",
+      "public"
+    ],
+    "notes": "DNS records: 2 | TTL: 300 | DNS created: 2023-02-26 | Public NS: pelican.dnspod.net, arno.dnspod.net",
+    "source": [
+      "huawei-dns"
+    ]
   }
 ]
