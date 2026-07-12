@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/emit-sites-worker.mjs",
     "preview": "vite preview",
     "sync": "node scripts/sync-domains.mjs"
   },
