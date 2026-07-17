@@ -4,11 +4,35 @@ A local-first dashboard for keeping scattered domain names visible in one place.
 
 ## Branch Policy
 
-The `apple-design-preview` branch is the primary working version of this site.
-It contains the Apple-inspired interface and should be used as the reference
-for local preview, future design work, and eventual deployment. The `main`
-branch is kept as the original/base branch with the same data file for
-compatibility and fallback.
+This repository intentionally keeps a small branch model:
+
+- `apple-design-preview` is the primary working version of the site. It contains
+  the Apple-inspired interface and should be used for local preview, future
+  design work, and any explicitly requested Sites deployment.
+- `main` is kept as the original/base branch line with the same sanitized data
+  shape for compatibility and fallback.
+- GitHub `origin` should mirror only those two branches:
+  `origin/apple-design-preview` and `origin/main`.
+- The repo does not keep a persistent local `sites` remote or a `sites/main`
+  branch. OpenAI Sites has its own internal deployment source, but local work
+  should stay on the two GitHub branches above.
+
+If you are unsure which branch to use for UI work, use `apple-design-preview`.
+
+## Sites Publishing
+
+OpenAI Sites configuration lives in `.openai/hosting.json`. Treat production
+publishing as an explicit step, separate from ordinary local edits.
+
+For normal local work:
+
+- Edit on `apple-design-preview`.
+- Run `npm run build` when validation is needed.
+- Do not save/deploy to Sites unless specifically asked.
+
+When publishing is requested, build from the current `apple-design-preview`
+source state and let the Sites tooling reuse the existing project id. There is
+no need to recreate a local `sites` remote or revive a `sites/main` branch.
 
 The dashboard reads generated `public/domains.json` in the browser. `scripts/sync-domains.mjs` can pull from provider APIs and write the same normalized JSON shape without exposing cloud credentials to the frontend. A safe sample lives at `public/domains.sample.json`.
 
